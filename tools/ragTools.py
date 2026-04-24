@@ -5,7 +5,7 @@ loader = PyPDFLoader(file_path)
 
 docs = loader.load()
 
-print(len(docs[0].page_content))
+# print(len(docs[0].page_content))
 
 
 # 人工智能的核心领域包括哪些？
@@ -21,7 +21,7 @@ text_splitter = RecursiveCharacterTextSplitter(
 )
 all_splits = text_splitter.split_documents(docs)
 
-print(len(all_splits))
+#print(len(all_splits))
 
 # 嵌入文档
 import os

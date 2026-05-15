@@ -44,6 +44,29 @@ def get_answer(question):
         {"messages": [HumanMessage(question)]},
         {"configurable": {"thread_id": "1"}}
     )["messages"][-1].content
+import json
+async def stream_answer(question: str, thread_id: str):
+    """生成流式回答"""
+    try:
+        async for event in agent.astream_events(
+            {"messages": [HumanMessage(question)]},
+            {"configurable": {"thread_id": thread_id}},
+            version="v2"
+        ):
+            # 处理不同类型的流式事件
+            if event["event"] == "on_chat_model_stream":
+                content = event["data"]["chunk"].content
+                if content:
+                    # 以 SSE 格式输出
+                    yield f"data: {json.dumps({'token': content}, ensure_ascii=False)}\n\n"
+            
+            elif event["event"] == "on_chain_end":
+                if event["name"] == "Agent":
+                    # 输出结束标记
+                    yield f"data: {json.dumps({'done': True}, ensure_ascii=False)}\n\n"
+        
+    except Exception as e:
+        yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
 
 #print(response)
 #print(response["messages"][-1].content)

@@ -18,9 +18,26 @@ async def tomato(query: Query):
     answer = get_answer(query.question)
     return Response.ok(answer)
 
+from fastapi.responses import StreamingResponse
+from agent0422 import stream_answer
+class ChatRequest(BaseModel):
+    question: str
+    thread_id: str = "1"  # 支持多会话
 
-@app.post("/generate")
-async def generate(query: Query):
+@app.post("/agent/stream")
+async def chat_stream(request: ChatRequest):
+    """流式聊天接口"""
+    return StreamingResponse(
+        stream_answer(request.question, request.thread_id),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+@app.post("/agent/generate")
+async def generate():
     # 流式响应示例
     return {"message": "Hello, World!"}
 

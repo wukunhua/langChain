@@ -1,9 +1,57 @@
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader, TextLoader,UnstructuredWordDocumentLoader
+from pathlib import Path
+import chardet
 #加载pdf文件
-file_path = "./knowledge/RAG.pdf"
-loader = PyPDFLoader(file_path)
+KNOWLEDGE_DIR = "./knowledge"
+def load_text_file(file_path):
+    """自动检测编码并加载文件"""
+    # 检测文件编码
+    with open(file_path, 'rb') as f:
+        result = chardet.detect(f.read())
+        encoding = result['encoding']
+        print(f"检测到编码: {encoding}")
+    
+    # 使用检测到的编码加载
+    loader = TextLoader(file_path, encoding=encoding)
+    return loader
+def load_all_documents(directory_path: str):
+    """加载文件夹中的所有文档"""
+    all_docs = []
+    
+    # 支持的文档格式及其对应的加载器
+    loaders_map = {
+        ".pdf": PyPDFLoader,
+        ".txt": load_text_file,
+        ".docx": UnstructuredWordDocumentLoader,
+        # 可以继续添加其他格式
+        # ".md": TextLoader,
+    }
+    
+    # 遍历文件夹中的所有文件
+    for file_path in Path(directory_path).iterdir():
+        if file_path.is_file():
+            suffix = file_path.suffix.lower()
+            if suffix in loaders_map:
+                try:
+                    print(f"正在加载: {file_path.name}")
+                    loader_class = loaders_map[suffix]
+                    loader = loader_class(str(file_path))
+                    docs = loader.load()
+                    all_docs.extend(docs)
+                    print(f"  ✅ 成功加载 {len(docs)} 个文档片段")
+                except Exception as e:
+                    print(f"  ❌ 加载失败 {file_path.name}: {e}")
+            else:
+                print(f"  ⏭️  跳过不支持的文件格式: {file_path.name}")
+    
+    print(f"\n总计加载 {len(all_docs)} 个文档片段")
+    return all_docs
 
-docs = loader.load()
+
+# file_path = "./knowledge/RAG.pdf"
+# loader = PyPDFLoader(file_path)
+
+docs = load_all_documents(KNOWLEDGE_DIR)
 
 #分割文档
 from langchain_text_splitters import RecursiveCharacterTextSplitter

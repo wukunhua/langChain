@@ -15,27 +15,38 @@ model = ChatOpenAI(
 from langchain.agents import create_agent
 #引入ragtools
 from tools.ragTools import retrieve_context
+from tools.weatherTools import get_weather
 #引入system_instruction
 system_instruction = """你是一个专业的智能助手，负责回答关于公司内部知识库的问题。
 你的核心规则是：
 1.  当用户询问任何业务、产品、流程相关问题时，**必须且只能**使用 `retrieve_context` 工具来获取答案，不要根据自己的知识回答。
 2.  如果 `retrieve_context` 工具返回的结果为空或表示不知道，请礼貌地告诉用户：“知识库中暂无相关信息，请联系人工支持。”
-3.  回答时请保持简洁、专业。
+3.  请使用中文回答。
+4.  回答时请保持简洁、专业。
+5.  如果用户提出关于天气的问题，请使用 `get_weather` 工具来获取答案。
 """
 agent = create_agent(
     model,
-    [retrieve_context],
+    [retrieve_context,get_weather],
     # agent_type="zero-shot-react-description",
     # verbose=True,
     system_prompt=system_instruction
 )
-question = "机器学习可以分为哪三类？"
-response = agent.invoke(
-    {"messages": [HumanMessage(question)]},
-    {"configurable": {"thread_id": "1"}}
-)
-print(response)
-print(response["messages"][-1].content)
+#question = "机器学习可以分为哪三类？"
+# question = "你是谁？你能做什么？今天天气怎么样？"
+# response = agent.invoke(
+#     {"messages": [HumanMessage(question)]},
+#     {"configurable": {"thread_id": "1"}}
+# )
+
+def get_answer(question):
+    return agent.invoke(
+        {"messages": [HumanMessage(question)]},
+        {"configurable": {"thread_id": "1"}}
+    )["messages"][-1].content
+
+#print(response)
+#print(response["messages"][-1].content)
 
 
 #RAG部分
